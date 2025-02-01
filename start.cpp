@@ -11,6 +11,7 @@
 #include <list>
 #include <cmath>
 #include <conio.h>
+#include <winsock2.h>
 #include <Windows.h>
 #include <algorithm>
 #include <fstream>
