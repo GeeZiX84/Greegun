@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:\\Users\\adm\\vcpkg\\packages\\libssh_x64-windows\\include\\"
+                "C:\\Users\\adm\\vcpkg\\packages\\libssh2-1.11.1\\include"
             ],
             "defines": [
                 "_DEBUG",

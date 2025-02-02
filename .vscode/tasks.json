@@ -10,7 +10,7 @@
                 "${file}",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-IC:\\Users\\adm\\vcpkg\\packages\\libssh_x64-windows\\include\\"
+                "-IC:\\Users\\adm\\vcpkg\\packages\\libssh2-1.11.1\\include",
             ],
             "options": {
                 "cwd": "${fileDirname}"
