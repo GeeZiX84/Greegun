@@ -1,33 +1,77 @@
 #include <libssh/libssh.h>
 #include <iostream>
-#include <cstdlib>
-void m(){
-    ssh_session my_ssh_session = ssh_new();
-    if (my_ssh_session == NULL) {
-        std::cerr << "Error initializing SSH session." << std::endl;
+#include <stdlib.h>
+#include <string.h>
+
+void interactive_shell(ssh_session session) {
+    char *e = "ls\n";
+    ssh_channel channel = ssh_channel_new(session);
+    if (channel == NULL) {
+        std::cerr << "Error creating channel!\n";
         return;
     }
 
-    // Set SSH session options
-    ssh_options_set(my_ssh_session, SSH_OPTIONS_HOST, "193.34.213.252" );
-    ssh_options_set(my_ssh_session, SSH_OPTIONS_USER, "root");
-    
-    // Connect to server
-    if (ssh_connect(my_ssh_session) != SSH_OK) {
-        std::cerr << "Connection failed: " << ssh_get_error(my_ssh_session) << std::endl;
-        ssh_free(my_ssh_session);
+    if (ssh_channel_open_session(channel) != SSH_OK) {
+        std::cerr << "Error opening channel: " << ssh_get_error(session) << "\n";
+        ssh_channel_free(channel);
         return;
     }
 
-    // Authenticate
-    if (ssh_userauth_password(my_ssh_session, NULL,"&DrS5w$rz100") != SSH_AUTH_SUCCESS) {
-        std::cerr << "Authentication failed: " << ssh_get_error(my_ssh_session) << std::endl;
-        ssh_disconnect(my_ssh_session);
-        ssh_free(my_ssh_session);
+    if (ssh_channel_request_pty(channel) != SSH_OK) {
+        std::cerr << "Failed to request PTY: " << ssh_get_error(session) << "\n";
+        ssh_channel_close(channel);
+        ssh_channel_free(channel);
         return;
     }
+
+    if (ssh_channel_request_shell(channel) != SSH_OK) {
+        std::cerr << "Failed to open shell: " << ssh_get_error(session) << "\n";
+        ssh_channel_close(channel);
+        ssh_channel_free(channel);
+        return;
+    }
+    ssh_channel_write(channel, e, strlen(e));
+
+    // Read output
+    char buffer[256];
+    int nbytes = ssh_channel_read(channel, buffer, sizeof(buffer) - 1, 0);
+    if (nbytes > 0) {
+        buffer[nbytes] = '\0';
+        printf("%s", buffer);
+    }
+
+    ssh_channel_send_eof(channel);
+    ssh_channel_close(channel);
+    ssh_channel_free(channel);
 }
-int main(){
-    m();
+
+int main() {
+    ssh_session session = ssh_new();
+    if (session == NULL) {
+        std::cerr << "Failed to create session!\n";
+        return 1;
+    }
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "193.34.213.252");
+    ssh_options_set(session, SSH_OPTIONS_USER, "root");
+
+    if (ssh_connect(session) != SSH_OK) {
+        std::cerr << "Error connecting: " << ssh_get_error(session) << "\n";
+        ssh_free(session);
+        return 1;
+    }
+
+    if (ssh_userauth_password(session, "root", "&DrS5w$rz100") != SSH_AUTH_SUCCESS) {
+        std::cerr << "Authentication failed: " << ssh_get_error(session) << "\n";
+        ssh_disconnect(session);
+        ssh_free(session);
+        return 1;
+    }
+
+    std::cout << "Connected! Starting interactive shell...\n";
+    interactive_shell(session);
+
+    ssh_disconnect(session);
+    ssh_free(session);
     return 0;
 }
