@@ -13,3 +13,4 @@ private:
     const char *password;
     ssh_session session;
 };
+//.

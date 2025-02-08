@@ -145,3 +145,4 @@ void Connect::file(ssh_session session) {
 ssh_session Connect::getSession() {
     return session;
 }
+//.

@@ -1,6 +1,6 @@
 #include <windows.h>
 #include "UserData.h"
-
+//.
 // Использование пространства имен std для удобства
 using namespace std;
 
