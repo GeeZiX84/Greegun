@@ -123,6 +123,7 @@ void Connect::file(ssh_session session) {
     char buffer[256];
     std::string input = "scp";
 
+    
     input += "\n";
     ssh_channel_write(channel, input.c_str(), input.size());
 
@@ -140,4 +141,8 @@ void Connect::file(ssh_session session) {
     ssh_channel_close(channel);
     ssh_channel_free(channel);
 }
+ssh_session Connect::getSession() {
+        return session;
+}
+
 //.
