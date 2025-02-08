@@ -1,22 +1,31 @@
 #include <windows.h>
+#include "UserData.h"
+
+// Использование пространства имен std для удобства
+using namespace std;
 
 // Глобальные переменные
 HINSTANCE hInst;
 HWND hUsername1, hUsername2, hPassword, hButton;
+UserData userData; // Создание объекта класса UserData
 
 // Функция обработки окна
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_CREATE: {
+            // Загрузка данных при создании окна
+            userData.LoadData();
+
+            // Создание элементов управления
             CreateWindowW(L"STATIC", L"IP", WS_VISIBLE | WS_CHILD, 20, 20, 100, 20, hWnd, NULL, hInst, NULL);
-            hUsername1 = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 20, 150, 20, hWnd, NULL, hInst, NULL);
+            hUsername1 = CreateWindowW(L"EDIT", userData.username1.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 20, 150, 20, hWnd, NULL, hInst, NULL);
             
             CreateWindowW(L"STATIC", L"Username", WS_VISIBLE | WS_CHILD, 20, 50, 100, 20, hWnd, NULL, hInst, NULL);
-            hUsername2 = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 50, 150, 20, hWnd, NULL, hInst, NULL);
+            hUsername2 = CreateWindowW(L"EDIT", userData.username2.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 50, 150, 20, hWnd, NULL, hInst, NULL);
 
             // Поле "Пароль"
             CreateWindowW(L"STATIC", L"Пароль:", WS_VISIBLE | WS_CHILD, 20, 80, 100, 20, hWnd, NULL, hInst, NULL);
-            hPassword = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 130, 80, 150, 20, hWnd, NULL, hInst, NULL);
+            hPassword = CreateWindowW(L"EDIT", userData.password.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 130, 80, 150, 20, hWnd, NULL, hInst, NULL);
 
             // Кнопка "Войти"
             hButton = CreateWindowW(L"BUTTON", L"Войти", WS_VISIBLE | WS_CHILD, 130, 110, 150, 30, hWnd, (HMENU)1, hInst, NULL);
@@ -31,6 +40,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 GetWindowTextW(hUsername1, username1, 50);
                 GetWindowTextW(hUsername2, username2, 50);
                 GetWindowTextW(hPassword, password, 50);
+
+                // Обновляем данные пользователя
+                userData.username1 = username1;
+                userData.username2 = username2;
+                userData.password = password;
+
+                // Сохраняем данные в файл
+                userData.SaveData();
 
                 // Выводим в MessageBox (русский текст поддерживается)
                 wchar_t message[200];
