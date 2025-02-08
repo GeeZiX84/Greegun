@@ -5,8 +5,7 @@
 #include <cstring>
 #include <conio.h>
 
-Connect::Connect(const char *i, const char *u, const char *p) 
-    : ip_address(i), username(u), password(p) {
+Connect::Connect(const char *i, const char *u, const char *p) : ip_address(i), username(u), password(p) {
     session = ssh_new();
     if (session == NULL) {
         std::cerr << "Ошибка создания SSH-сессии!\n";
