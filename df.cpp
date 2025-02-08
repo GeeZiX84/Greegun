@@ -1,10 +1,9 @@
-#include "ssh.h"
 #include "wind.h"
-#include <libssh/libssh.h>
-#include "windows.h"
+#include <windows.h>
 
-int main() {
-    Windows w();
-    w.Run();
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+    Windows app(hInstance, nCmdShow);
+    app.Run();
+
+    return 0;
 }
-//.
