@@ -24,7 +24,7 @@
 using namespace std;
 
 int main(){
-    int i = MessageBox(0, "TEXT", "TEXT", MB_OKCANCEL);
+    int i = MessageBox(0, L"TEXT", L"TEXT", MB_OKCANCEL);
     if (i == IDOK){
         printf("%d\n L");
     }
