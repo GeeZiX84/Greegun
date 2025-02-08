@@ -1,6 +1,6 @@
 #include "wind.h"
 
-Windows::Windows(HINSTANCE hInstance, int nCmdShow) : hInst(hInstance) {
+Windows::Windows(HINSTANCE hInstance, int nCmdShow) : hInst(hInstance), connection(nullptr) {
     RegisterWindowClass();
 
     HWND hWnd = CreateMainWindow();
@@ -27,7 +27,7 @@ void Windows::RegisterWindowClass() {
 
 HWND Windows::CreateMainWindow() {
     return CreateWindowW(L"LoginWindow", L"Авторизация", WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX, 
-                         CW_USEDEFAULT, CW_USEDEFAULT, 320, 220, NULL, NULL, hInst, this);
+                         CW_USEDEFAULT, CW_USEDEFAULT, 320, 250, NULL, NULL, hInst, this);
 }
 
 void Windows::MainLoop() {
@@ -53,47 +53,73 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
                 app->userData.LoadData();
 
                 CreateWindowW(L"STATIC", L"IP", WS_VISIBLE | WS_CHILD, 20, 20, 100, 20, hWnd, NULL, app->hInst, NULL);
-                app->hUsername1 = CreateWindowW(L"EDIT", app->userData.username1.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 20, 150, 20, hWnd, NULL, app->hInst, NULL);
+                app->hIpAddress = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 20, 150, 20, hWnd, NULL, app->hInst, NULL);
 
                 CreateWindowW(L"STATIC", L"Username", WS_VISIBLE | WS_CHILD, 20, 50, 100, 20, hWnd, NULL, app->hInst, NULL);
-                app->hUsername2 = CreateWindowW(L"EDIT", app->userData.username2.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 50, 150, 20, hWnd, NULL, app->hInst, NULL);
+                app->hUsername1 = CreateWindowW(L"EDIT", app->userData.username1.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 50, 150, 20, hWnd, NULL, app->hInst, NULL);
 
                 CreateWindowW(L"STATIC", L"Пароль:", WS_VISIBLE | WS_CHILD, 20, 80, 100, 20, hWnd, NULL, app->hInst, NULL);
                 app->hPassword = CreateWindowW(L"EDIT", app->userData.password.c_str(), WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 130, 80, 150, 20, hWnd, NULL, app->hInst, NULL);
 
                 app->hButton = CreateWindowW(L"BUTTON", L"Войти", WS_VISIBLE | WS_CHILD, 130, 110, 150, 30, hWnd, (HMENU)1, app->hInst, NULL);
                 app->hSaveCheckBox = CreateWindowW(L"BUTTON", L"Сохранить", WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 130, 150, 150, 20, hWnd, (HMENU)2, app->hInst, NULL);
+                app->hConnectButton = CreateWindowW(L"BUTTON", L"Подключиться", WS_VISIBLE | WS_CHILD, 130, 180, 150, 30, hWnd, (HMENU)3, app->hInst, NULL);
                 break;
             }
 
             case WM_COMMAND:
                 if (LOWORD(wParam) == 1) {  
-                    wchar_t username1[50], username2[50], password[50];
+                    wchar_t username1[50], password[50];
 
                     GetWindowTextW(app->hUsername1, username1, 50);
-                    GetWindowTextW(app->hUsername2, username2, 50);
                     GetWindowTextW(app->hPassword, password, 50);
 
                     app->userData.username1 = username1;
-                    app->userData.username2 = username2;
                     app->userData.password = password;
 
                     if (SendMessage(app->hSaveCheckBox, BM_GETCHECK, 0, 0) == BST_CHECKED) {
                         app->userData.SaveData();
                         MessageBoxW(hWnd, L"Данные сохранены", L"Сохранение", MB_OK | MB_ICONINFORMATION);
-                    } else {
-                        MessageBoxW(hWnd, L"Галочка не установлена", L"Сохранение", MB_OK | MB_ICONWARNING);
                     }
 
                     wchar_t message[200];
-                    wsprintfW(message, L"Юзернейм 1: %s\nЮзернейм 2: %s\nПароль: %s", username1, username2, password);
+                    wsprintfW(message, L"Юзернейм: %s\nПароль: %s", username1, password);
                     MessageBoxW(hWnd, message, L"Вход выполнен", MB_OK | MB_ICONINFORMATION);
+                } else if (LOWORD(wParam) == 3) {
+                    wchar_t ip_address[50];
+                    GetWindowTextW(app->hIpAddress, ip_address, 50);
+
+                    char ip[50];
+                    wcstombs(ip, ip_address, 50);
+
+                    char username[50];
+                    wcstombs(username, app->userData.username1.c_str(), 50);
+
+                    char password[50];
+                    wcstombs(password, app->userData.password.c_str(), 50);
+
+                    if (app->connection) {
+                        delete app->connection;
+                    }
+
+                    app->connection = new Connect(ip, username, password);
+
+                    if (app->connection->getSession() != nullptr) {
+                        MessageBoxW(hWnd, L"Успешно подключено к серверу!", L"Подключение", MB_OK | MB_ICONINFORMATION);
+                    } else {
+                        MessageBoxW(hWnd, L"Ошибка подключения к серверу.", L"Ошибка", MB_OK | MB_ICONERROR);
+                    }
                 }
                 break;
 
             case WM_DESTROY:
-                DestroyWindow(app->hButton); // Удаление кнопки "Войти"
-                DestroyWindow(app->hSaveCheckBox); // Удаление флажка "Сохранить"
+                if (app->connection) {
+                    delete app->connection;
+                }
+                DestroyWindow(app->hButton);
+                DestroyWindow(app->hSaveCheckBox);
+                DestroyWindow(app->hConnectButton);
+                DestroyWindow(app->hIpAddress);
                 PostQuitMessage(0);
                 break;
 

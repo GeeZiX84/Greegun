@@ -1,5 +1,4 @@
-#include "wind.h"
-#include "ssh.h"
+#include <winsock2.h>
 #include <windows.h>
 #include <iostream>
 #include <string>
@@ -7,6 +6,8 @@
 #include <conio.h>
 #include <sstream>
 #include <thread>
+#include "wind.h"
+#include "ssh.h"
 
 using namespace std;
 
@@ -26,12 +27,12 @@ void sshTask() {
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
     Windows app(hInstance, nCmdShow);
 
-    // Create a separate thread to handle SSH connection
+    // Создаем отдельный поток для обработки SSH-подключения
     std::thread sshThread(sshTask);
 
-    app.Run(); // This will run the event loop for the GUI
+    app.Run(); // Это запустит цикл событий для GUI
 
-    // Wait for the SSH thread to complete before exiting
+    // Ожидаем завершения потока SSH перед выходом
     sshThread.join();
 
     return 0;
