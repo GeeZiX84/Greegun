@@ -5,33 +5,33 @@
 #include <cstring>
 #include <conio.h>
 
-Connect::Connect(const char *i,const char *u,const char *p){
-    ip_adress = i;
-    username = u;
-    password = p;
-    ssh_session session = ssh_new();
+Connect::Connect(const char *i, const char *u, const char *p) 
+    : ip_address(i), username(u), password(p) {
+    session = ssh_new();
     if (session == NULL) {
         std::cerr << "Ошибка создания SSH-сессии!\n";
+        return;
     }
 
-    ssh_options_set(session, SSH_OPTIONS_HOST, "-");
-    ssh_options_set(session, SSH_OPTIONS_USER, "-");
+    ssh_options_set(session, SSH_OPTIONS_HOST, ip_address);
+    ssh_options_set(session, SSH_OPTIONS_USER, username);
 
     if (ssh_connect(session) != SSH_OK) {
         std::cerr << "Ошибка подключения: " << ssh_get_error(session) << "\n";
         ssh_free(session);
+        return;
     }
 
-    if (ssh_userauth_password(session, "-", "-") != SSH_AUTH_SUCCESS) {
+    if (ssh_userauth_password(session, username, password) != SSH_AUTH_SUCCESS) {
         std::cerr << "Ошибка аутентификации: " << ssh_get_error(session) << "\n";
         ssh_disconnect(session);
         ssh_free(session);
+        return;
     }
 
     std::cout << "Успешное подключение к серверу!\n";
-    
-    
 }
+
 void Connect::interactive_shell(ssh_session session) {
     ssh_channel channel = ssh_channel_new(session);
     if (channel == NULL) {
@@ -68,10 +68,9 @@ void Connect::interactive_shell(ssh_session session) {
         if (_kbhit()) {  // Проверяем, есть ли ввод от пользователя (Windows)
             std::getline(std::cin, user_input);
             if (user_input == "exit") break;
-            else if(user_input != "ls"){
+            else if (user_input != "ls") {
                 std::cout << "Введите ls типо для запуска сервера" << std::endl;
-            }
-            else{
+            } else {
                 user_input += "\n";
                 ssh_channel_write(channel, user_input.c_str(), user_input.size());
             }
@@ -92,7 +91,8 @@ void Connect::interactive_shell(ssh_session session) {
     ssh_channel_close(channel);
     ssh_channel_free(channel);
 }
-void Connect::file(ssh_session session){
+
+void Connect::file(ssh_session session) {
     ssh_channel channel = ssh_channel_new(session);
     if (channel == NULL) {
         std::cerr << "Ошибка создания SSH-канала!\n";
@@ -127,7 +127,7 @@ void Connect::file(ssh_session session){
     input += "\n";
     ssh_channel_write(channel, input.c_str(), input.size());
 
-        // Проверяем, есть ли данные для чтения с сервера
+    // Проверяем, есть ли данные для чтения с сервера
     if (ssh_channel_poll(channel, 0) > 0) {
         memset(buffer, 0, sizeof(buffer));
         int n = ssh_channel_read(channel, buffer, sizeof(buffer) - 1, 0);
@@ -141,3 +141,4 @@ void Connect::file(ssh_session session){
     ssh_channel_close(channel);
     ssh_channel_free(channel);
 }
+//.
