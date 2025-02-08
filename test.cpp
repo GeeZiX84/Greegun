@@ -72,8 +72,8 @@ int main() {
         return 1;
     }
 
-    ssh_options_set(session, SSH_OPTIONS_HOST, "193.34.213.252");
-    ssh_options_set(session, SSH_OPTIONS_USER, "root");
+    ssh_options_set(session, SSH_OPTIONS_HOST, "-");
+    ssh_options_set(session, SSH_OPTIONS_USER, "-");
 
     if (ssh_connect(session) != SSH_OK) {
         std::cerr << "Ошибка подключения: " << ssh_get_error(session) << "\n";
@@ -81,7 +81,7 @@ int main() {
         return 1;
     }
 
-    if (ssh_userauth_password(session, "root", "&DrS5w$rz100") != SSH_AUTH_SUCCESS) {
+    if (ssh_userauth_password(session, "-", "-") != SSH_AUTH_SUCCESS) {
         std::cerr << "Ошибка аутентификации: " << ssh_get_error(session) << "\n";
         ssh_disconnect(session);
         ssh_free(session);

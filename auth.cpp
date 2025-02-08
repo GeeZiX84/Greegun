@@ -8,12 +8,10 @@ HWND hUsername1, hUsername2, hPassword, hButton;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_CREATE: {
-            // Поле "Юзернейм 1"
-            CreateWindowW(L"STATIC", L"Юзернейм 1:", WS_VISIBLE | WS_CHILD, 20, 20, 100, 20, hWnd, NULL, hInst, NULL);
+            CreateWindowW(L"STATIC", L"IP", WS_VISIBLE | WS_CHILD, 20, 20, 100, 20, hWnd, NULL, hInst, NULL);
             hUsername1 = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 20, 150, 20, hWnd, NULL, hInst, NULL);
-
-            // Поле "Юзернейм 2"
-            CreateWindowW(L"STATIC", L"Юзернейм 2:", WS_VISIBLE | WS_CHILD, 20, 50, 100, 20, hWnd, NULL, hInst, NULL);
+            
+            CreateWindowW(L"STATIC", L"Username", WS_VISIBLE | WS_CHILD, 20, 50, 100, 20, hWnd, NULL, hInst, NULL);
             hUsername2 = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 50, 150, 20, hWnd, NULL, hInst, NULL);
 
             // Поле "Пароль"
