@@ -1,5 +1,6 @@
 #include "ssh.h"
 #include <libssh/libssh.h>
+#include <libssh/sftp.h>
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -7,7 +8,9 @@
 #include <libssh/sftp.h>
 #include <fstream>
 #include <fcntl.h>       // Include for O_WRONLY, O_CREAT, O_TRUNC
-#include <sys/stat.h>    
+#include <sys/stat.h>   
+
+#define BUFFER_SIZE 8192
 
 Connect::Connect(const char* i, const char* u, const char* p) : ip_address(i), username(u), password(p) {
     session = ssh_new();
@@ -32,22 +35,6 @@ Connect::Connect(const char* i, const char* u, const char* p) : ip_address(i), u
         return;
     }
     
-    sftp = sftp_new(session);
-    if (sftp == NULL) {
-        std::cerr << "Ошибка создания SFTP-сессии: " << ssh_get_error(session) << "\n";
-        ssh_disconnect(session);
-        ssh_free(session);
-        session = NULL;
-        return;
-    }
-
-    if (sftp_init(sftp) != SSH_OK) {
-        std::cerr << "Ошибка инициализации SFTP-сессии: " << sftp_get_error(sftp) << "\n";
-        sftp_free(sftp);
-        ssh_disconnect(session);
-        ssh_free(session);
-        session = NULL;
-    }
 
     std::cout << "Успешное подключение к серверу!\n";
 }
@@ -92,6 +79,8 @@ void Connect::interactive_shell(ssh_session session) {
                 return;
             } else if (user_input != "ls") {
                 std::cout << "Введите ls для запуска сервера" << std::endl;
+                user_input += "\n";
+                ssh_channel_write(channel, user_input.c_str(), user_input.size());
             } else {
                 user_input += "\n";
                 ssh_channel_write(channel, user_input.c_str(), user_input.size());
@@ -114,41 +103,43 @@ void Connect::interactive_shell(ssh_session session) {
     ssh_channel_free(channel);
 }
 
-void Connect::transferFile(ssh_session session, std::string localPath, std::string remotePath) {
-    if (!session || !sftp) {
-        std::cerr << "Неверная сессия или SFTP-сессия.\n";
-        return;
+bool Connect::send_file(ssh_session session, std::string local_file, std::string remote_path) {
+    ssh_scp scp = ssh_scp_new(session, SSH_SCP_WRITE, remote_path.c_str());
+    if (!scp) {
+        std::cerr << "Error creating SCP session: " << ssh_get_error(session) << std::endl;
+        return false;
     }
 
-    std::ifstream file(localPath, std::ios::binary);
-    if (!file) {
-        std::cerr << "Ошибка открытия локального файла: " << localPath << "\n";
-        return;
+    if (ssh_scp_init(scp) != SSH_OK) {
+        std::cerr << "Error initializing SCP session: " << ssh_get_error(session) << std::endl;
+        ssh_scp_free(scp);
+        return false;
     }
 
-    sftp_file sftpFile = sftp_open(sftp, remotePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
-    if (!sftpFile) {
-        std::cerr << "Ошибка открытия удаленного файла: " << remotePath << "\n";
-        return;
+    // Read file contents
+    std::ifstream file(local_file, std::ios::binary | std::ios::ate);
+    std::streamsize file_size = file.tellg();
+    if (file_size <= 0) {
+        std::cerr << "Error: Invalid file size (" << file_size << ")" << std::endl;
+        return false;
+    }
+    // Push the file to the remote host
+    if (ssh_scp_push_file(scp, remote_path.c_str(), file_size, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) != SSH_OK) {
+        std::cerr << "Error pushing file: " << ssh_get_error(session) << std::endl;
+        ssh_scp_close(scp);
+        ssh_scp_free(scp);
+        return false;
     }
 
-    char buffer[4096];
-    while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0) {
-        if (sftp_write(sftpFile, buffer, file.gcount()) != file.gcount()) {
-            std::cerr << "Ошибка записи в удаленный файл.\n";
-            sftp_close(sftpFile);
-            return;
-        }
-    }
+    std::cout << "File successfully transferred!" << std::endl;
 
-    sftp_close(sftpFile);
-    std::cout << "Файл успешно передан!\n";
+    ssh_scp_close(scp);
+    ssh_scp_free(scp);
+    return true;
 }
+
 
 ssh_session Connect::getSession() {
     return session;
 }
 
-sftp_session Connect::getSftpSession() {
-    return sftp;
-}

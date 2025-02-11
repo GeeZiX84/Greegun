@@ -11,10 +11,7 @@
 #include <locale>
 #include <codecvt>
 using namespace std;
-std::string wstring_to_string(const std::wstring& wstr) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    return converter.to_bytes(wstr);
-}
+
 std::wstring OpenFileDialog() {
     OPENFILENAME ofn;
     wchar_t szFile[260] = { 0 };
@@ -155,6 +152,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 
                     if (app->connection->getSession() != nullptr) {
                         MessageBoxW(hWnd, L"Успешно подключено к серверу!", L"Подключение", MB_OK | MB_ICONINFORMATION);
+                        
                         app->connection->interactive_shell(app->connection->getSession());
                     } else {
                         MessageBoxW(hWnd, L"Ошибка подключения к серверу.", L"Ошибка", MB_OK | MB_ICONERROR);
@@ -181,14 +179,15 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
                     }
 
                     app->connection = new Connect(ip, username, password);
-
+                    char Path[100];
+                    wcstombs(Path, wFilePath.c_str(), 100);
                     if (app->connection->getSession() != nullptr) {
                         MessageBoxW(hWnd, L"Успешно подключено к серверу!", L"Подключение", MB_OK | MB_ICONINFORMATION);
                     }   
                     else {
                             MessageBoxW(hWnd, L"Ошибка подключения к серверу.", L"Ошибка", MB_OK | MB_ICONERROR);
                         }
-                        app->connection->transferFile(app->connection->getSession(),wstring_to_string(wFilePath),"/root/moe"); 
+                        app->connection->send_file(app->connection->getSession(),string(Path),"/root/moe"); 
                         MessageBoxW(hWnd, wFilePath.c_str(), L"Выбранный файл", MB_OK | MB_ICONINFORMATION);
 
                     } else {
