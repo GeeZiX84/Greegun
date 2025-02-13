@@ -14,7 +14,7 @@ public:
 
 private:
     HINSTANCE hInst;
-    HWND hUsername1, hUsername2, hPassword, hButton, hSaveCheckBox, hConnectButton, hIpAddress;
+    HWND hUsername1, hUsername2, hPassword, hButton, hSaveCheckBox, hConnectButton, hIpAddress, hConsole, hConsoleInput;
     UserData userData;
     Connect* connection;
 
@@ -22,4 +22,5 @@ private:
     void RegisterWindowClass();
     HWND CreateMainWindow();
     void MainLoop();
+    void AppendConsoleText(const std::wstring& text);
 };

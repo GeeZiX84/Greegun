@@ -10,6 +10,8 @@
 #include <sstream>
 #include <locale>
 #include <codecvt>
+#include <fcntl.h>
+#include <io.h> 
 using namespace std;
 
 std::wstring OpenFileDialog() {
@@ -45,6 +47,7 @@ Windows::Windows(HINSTANCE hInstance, int nCmdShow) : hInst(hInstance), connecti
     RegisterWindowClass();
 
     HWND hWnd = CreateMainWindow();
+
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
@@ -66,9 +69,14 @@ void Windows::RegisterWindowClass() {
     RegisterClassW(&wc);
 }
 
+void Windows::AppendConsoleText(const std::wstring& text) {
+    int len = GetWindowTextLengthW(hConsole);
+    SendMessageW(hConsole, EM_SETSEL, (WPARAM)len, (LPARAM)len);
+    SendMessageW(hConsole, EM_REPLACESEL, 0, (LPARAM)text.c_str());
+}
+
 HWND Windows::CreateMainWindow() {
-    return CreateWindowW(L"LoginWindow", L"Авторизация", WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX, 
-                         CW_USEDEFAULT, CW_USEDEFAULT, 320, 300, NULL, NULL, hInst, this);
+    return CreateWindowW(L"LoginWindow", L"Авторизация", WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 1980, 1080, NULL, NULL, hInst, this);
 }
 
 void Windows::MainLoop() {
@@ -81,7 +89,7 @@ void Windows::MainLoop() {
 
 LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     Windows* app = reinterpret_cast<Windows*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-
+    
     if (message == WM_NCCREATE) {
         CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
         app = reinterpret_cast<Windows*>(pCreate->lpCreateParams);
@@ -92,7 +100,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
         switch (message) {
             case WM_CREATE: {
                 app->userData.LoadData();
-
+                
                 CreateWindowW(L"STATIC", L"IP", WS_VISIBLE | WS_CHILD, 20, 20, 100, 20, hWnd, NULL, app->hInst, NULL);
                 app->hIpAddress = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 130, 20, 150, 20, hWnd, NULL, app->hInst, NULL);
 
@@ -105,12 +113,21 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
                 app->hButton = CreateWindowW(L"BUTTON", L"Войти", WS_VISIBLE | WS_CHILD, 130, 110, 150, 30, hWnd, (HMENU)1, app->hInst, NULL);
                 app->hSaveCheckBox = CreateWindowW(L"BUTTON", L"Сохранить", WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 130, 150, 150, 20, hWnd, (HMENU)2, app->hInst, NULL);
                 app->hConnectButton = CreateWindowW(L"BUTTON", L"Подключиться", WS_VISIBLE | WS_CHILD, 130, 180, 150, 30, hWnd, (HMENU)3, app->hInst, NULL);
-
+                
                 // Add a button to open the file dialog
                 CreateWindowW(L"BUTTON", L"Выбрать файл", WS_VISIBLE | WS_CHILD, 130, 220, 150, 30, hWnd, (HMENU)4, app->hInst, NULL);
 
+                app->hConsole = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_VSCROLL | 
+                    ES_MULTILINE | ES_AUTOVSCROLL, 
+                    20, 190, 440, 200, hWnd, NULL, app->hInst, NULL);
+
+// Окно для ввода команды
+                app->hConsoleInput = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 
+                         20, 400, 340, 25, hWnd, NULL, app->hInst, NULL);
+                CreateWindowW(L"BUTTON", L"Отправить", WS_VISIBLE | WS_CHILD, 370, 400, 90, 25, hWnd, (HMENU)5, app->hInst, NULL);
+
                 break;
-            }
+                }
 
             case WM_COMMAND:
                 if (LOWORD(wParam) == 1) {  
@@ -195,7 +212,17 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
                     }
                 }
                 break;
-
+            if (LOWORD(wParam) == 5) { // Отправить команду
+            wchar_t input[256];
+            GetWindowTextW(app->hConsoleInput, input, 256);
+    
+                    // Добавляем ввод в консоль
+            app->AppendConsoleText(L"\n> " + std::wstring(input) + L"\n");
+    
+                    // Очищаем поле ввода
+            SetWindowTextW(app->hConsoleInput, L"");
+            }
+            break;
             case WM_DESTROY:
                 if (app->connection) {
                     delete app->connection;
