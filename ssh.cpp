@@ -77,11 +77,9 @@ void Connect::interactive_shell(ssh_session session) {
             if (user_input == "exit") {
                 std::cout << "Выхожу из консоли" << std::endl;
                 return;
-            } else if (user_input != "ls") {
-                std::cout << "Введите ls для запуска сервера" << std::endl;
-                user_input += "\n";
-                ssh_channel_write(channel, user_input.c_str(), user_input.size());
-            } else {
+            }
+            else
+            {
                 user_input += "\n";
                 ssh_channel_write(channel, user_input.c_str(), user_input.size());
             }

@@ -23,4 +23,5 @@ private:
     HWND CreateMainWindow();
     void MainLoop();
     void AppendConsoleText(const std::wstring& text);
+    void ExecuteCommand(const std::wstring& command);
 };
